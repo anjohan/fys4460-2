@@ -1,0 +1,45 @@
+log data/log.lammps
+units lj
+dimension 3
+boundary p p p
+atom_style atomic
+
+variable sigma equal 3.405
+variable b equal 5.72
+variable b_in_sigma equal ${b}/${sigma}
+variable density equal 4/(${b_in_sigma}^3)
+variable L equal 20
+
+variable T equal 0.851
+
+lattice fcc ${density}
+region simbox block 0 ${L} 0 ${L} 0 ${L}
+create_box 1 simbox
+
+mass 1 1.0
+pair_style lj/cut 3.0
+pair_coeff 1 1 1.0 1.0 3.0
+
+variable radius equal 20/${sigma} # 2 nm
+variable centrey equal ly/2
+variable centrez equal lz/2
+
+create_atoms 1 box
+velocity all create ${T} 87287
+
+dump 1 all custom 10 data/dump.lammpstrj id type x y z vx vy vz
+thermo_style custom step time temp ke pe etotal cpuremain spcpu
+thermo 100
+
+fix 1 all nve
+run 3000 # thermalise
+
+python make_spheres input 1 SELF format p file make_spheres.py
+python make_spheres invoke
+
+group moving subtract all matrix
+velocity matrix set 0 0 0
+unfix 1
+
+fix 1 moving nve
+run 3000

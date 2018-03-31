@@ -32,7 +32,7 @@
 \usepackage{textcomp}
 \usepackage{lastpage}
 \usepackage{microtype}
-\usepackage[linktoc=all, bookmarks=true, pdfauthor={Anders Johansson},pdftitle={FYS4460 Project 1}]{hyperref}
+\usepackage[linktoc=all, bookmarks=true, pdfauthor={Anders Johansson},pdftitle={FYS4460 Project 2}]{hyperref}
 \usepackage{tikz,pgfplots,pgfplotstable}
 \usepgfplotslibrary{colorbrewer}
 \usepgfplotslibrary{external}
@@ -61,7 +61,7 @@
 
 %\setcounter{secnumdepth}{4}
 \renewcommand{\thesection}{Oppgave \arabic{section}}
-\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection})}
+\renewcommand{\thesubsection}{\alph{subsection})}
 \renewcommand{\thesubsubsection}{\arabic{section}\alph{subsection}\roman{subsubsection})}
 \setlength{\parindent}{0cm}
 \setlength{\parskip}{1em}
@@ -95,7 +95,7 @@
 \allowdisplaybreaks[4]
 \fancyhf{}
 
-\rhead{Project 1}
+\rhead{Project 2}
 \rfoot{Page~\thepage{} of~\pageref{LastPage}}
 \lhead{FYS4460}
 
@@ -130,7 +130,7 @@
 \vspace*{\fill}
 \begin{center}
 \textsf{
-    \Huge \textbf{Project 1}\\\vspace{0.5cm}
+    \Huge \textbf{Project 2}\\\vspace{0.5cm}
     \Large \textbf{FYS4460 - Disordered systems and percolation}\\
     \vspace{8cm}
     Anders Johansson\\
@@ -155,650 +155,53 @@
 % | (_| |
 %  \__,_|
 %
-\subsection*{a)}
-I have used the following workflow to see how the velocity distribution evolves with time:
-\begin{itemize}
-    \item LAMMPs generates an fcc structure and saves a data file.
-    \item A python script reads the data file and replaces the velocities (which are zero) with uniformly distributed velocities in a specified range.
-    \item LAMMPs runs a simulation from the resulting data file.
-    \item A python script uses ovito to parse the simulation data, makes histograms for each saved frame and computes the correlation.
-\end{itemize}
-When calculating the histograms, I have made sure the same bins are used for all frames by first finding the maximum velocity attained by any atom during the simulation, and then using equally sized bins in the range \(\qty[-v_{\max},v_{\max}]\). One histogram is computed for each direction, and then the average of these is taken.
-
-The correlation is computed by normalising the histograms and taking the dot product with the histogram computed from the final frame.
-As the velocity distribution approaches the final distribution, the correlation should approach 1.
-
-From \vref{fig:distribution}, it is clear that the velocity distribution rapidly changes from a uniform to a Gaussian shape.
-\Vref{fig:correlation} indicates that this happens exponentially, i.e.
+\subsection{}
+I reused the argon script from project 1, but changed the size of the system and the parameter of the lattice command. According to the project description, the lattice spacing should be \(a=\SI{5.72}{\angstrom} = \py{round(5.72/3.405,2)}\sigma\), giving a reduced density (the parameter of the \texttt{lattice} command) of
 \[
-    C(t) = 1-C_0\exp{-t/\tau}\,,
-\]
-where \(C(t)\) is the correlation, \(C_0\) is the initial correlation and \(\tau\) is a time constant.
-If this is the case,
-\[
-    \ln(1-C) = \ln(C_0\exp{-t/\tau}) = \ln(C_0) - t/\tau\,,
-\]
-so when plotted on a logarithmic scale, \(1-C(t)\) should be a linear function with slope \(-1/\tau\).
-The result is shown in~\vref{fig:logcorrelation}, and while the noise increases as the correlation approaches unity, it is clear from the first half of the graph that the trend is linear, confirming the exponential approach to \(1\).
-
-The time constant, \(\tau\), can thus be estimated by picking out the linear part of the data in \vref{fig:logcorrelation} and finding the slope.
-While this sounds simple, picking out a linear bit of a graph is hard to program.
-Fortunately,
-\[
-    C(\tau) = 1-C_0\exp{-\tau/\tau} = 1-C_0/\mathrm{e} \implies 1-C(\tau)=C_0/\mathrm{e} \implies \frac{1-C(\tau)}{1-C(0)} = \frac{1}{\mathrm{e}}\,,
-\]
-so the time constant can also be found by checking when \(1-C\) has reached \(1/\mathrm{e}\) of its initial value, which is very simple to program.
-The result is
-\openin\infile=a/data/tau.dat
-\read\infile to \timeconstant
-\closein\infile
-\[
-    \tau = \SI[round-mode=figures,round-precision=2]{\timeconstant}{\pico\s}\,.
+    \rho^* = \rho\sigma^3 = \frac{4}{\qty(a/\sigma)^3} = \frac{4}{\py{round(5.72/3.405,2)}^3} = \py{round(4/(5.72/3.405)**3,2)}.
 \]
 
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=3in,
-            xlabel={\(v\ \qty[\si{\angstrom\per\femto\s}]\)}, ylabel=Distribution,
-            legend style={draw=none}, legend cell align=left,
-            ]
-            \addplot+[mark=none] table {a/data/velocity_distribution1.dat};
-            \addlegendentry{Initial};
-            \addplot+[mark=none] table {a/data/velocity_distribution2.dat};
-            \addlegendentry{\(\frac{1}{5}\) of simulation}
-            \addplot+[mark=none] table {a/data/velocity_distribution3.dat};
-            \addlegendentry{Final}
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Distribution of particle velocities in the initial and final configurations, as well as after one-fifth of the simulation time.
-    The shape changes rapidly from uniform to Gaussian.}\label{fig:distribution}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle, axis y discontinuity=crunch,
-            ymin=0.912, enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=3in,
-            xlabel={\(t\ \qty[\si{\pico\s}]\)}, ylabel=Correlation]
-            \addplot+[mark=none,] table[x expr={\thisrowno{0}/1000}] {a/data/velocity_correlation.dat};
-            \draw (axis cs:\timeconstant,0.895) coordinate (A);
-            \draw (axis cs:\timeconstant,0.99) coordinate (B);
-        \end{axis}
-        \draw[dashed] (B) -- (A) node[below] {\(\tau\)};
-    \end{tikzpicture}
-    \caption{Correlation of the velocity distribution as a function of time.
-    The approach to \(1\) appears to be exponential, as confirmed by \vref{fig:logcorrelation}.}\label{fig:correlation}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{semilogyaxis}[thick,axis y line=middle, axis x line=bottom,
-            ymin=0.00001,ymax=0.1,
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=3in,
-            xlabel={\(t\ \qty[\si{\pico\s}]\)}, ylabel={\(1-C(t)\)}]
-            \addplot+[mark=none,] table[x expr={\thisrowno{0}/1000},y expr={1-\thisrowno{1}}] {a/data/velocity_correlation.dat};
-        \end{semilogyaxis}
-    \end{tikzpicture}
-    \caption{Deviation of the correlation from \(1\), plotted on a logarithmic scale.
-    The linear trend of the first part indicates exponential decay.
-    As the velocity distribution approaches the final distribution, the noise starts dominating the deviation.}\label{fig:logcorrelation}
-\end{figure}
-
-
-%  _
-% | |__
-% | '_ \
-% | |_) |
-% |_.__/
-%
-\openin\infile=b/data/firstdt.dat
-\read\infile to \firstdt
-\closein\infile
-\openin\infile=b/data/lastdt.dat
-\read\infile to \lastdt
-\closein\infile
-\subsection*{b)}
-In order to find the time dependence of the total energy (which should be constant in an NVE-system) as well as the fluctuations, I have made a simple python script which goes through a set of time steps and runs a LAMMPs script for each time step.
-Between the runs, the energy is read from the log file and the standard deviation is calculated.
-
-The time step starts at \(\Delta t = \num[round-mode=figures,round-precision=1]{\firstdt}t_0\), where \(t_0\) is the characteristic time for argon.
-As the time step is gradually increased, the system starts losing atoms, causing the simulation to crash.
-The largest time step used is \(\Delta t = \num[round-mode=figures,round-precision=2]{\lastdt}t_0\).
-
-As seen from \vref{fig:energy}, the energy conservation is much worse when a large time step is used.
-\Vref{fig:energystddev} is an attempt at quantifying the effect of the time step, but the results are hard to interpret.
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle, enlarge x limits=0.05,
-                     enlarge y limits=0.10,
-                     axis y discontinuity=crunch, width=6in,height=3in,
-                     xlabel={\(t\ \qty[\si{\pico\s}]\)}, ylabel={\(E\ \qty[\si{\eV}]\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=east},
-                     legend style={draw=none}, legend cell align=left,
-                     ]
-                     \addplot+[mark=none] table[x expr={\thisrowno{0}/1000}] {b/data/Efirst.dat};
-                     \addlegendentry{\(\Delta t = \num[round-mode=figures,round-precision=2,scientific-notation=false]{\firstdt}t_0\)};
-                     \addplot+[mark=none] table[x expr={\thisrowno{0}/1000}] {b/data/Elast.dat};
-                     \addlegendentry{\(\Delta t = \num[round-mode=figures,round-precision=2,scientific-notation=false]{\lastdt}t_0\)};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Total energy as a function of time for the largest and smallest time steps used. It is clear that the energy conservation is better when a small time step is used.}
-    \label{fig:energy}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{semilogyaxis}[thick,axis y line=middle, axis x line=bottom,
-            ymin=0.0000001,
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=3in,
-            xlabel={\(\Delta t/t_0\)}, ylabel={\(\sigma_E\ \qty[\si{\eV}]\)}]
-            \addplot+[mark=none,] table {b/data/stddev.dat};
-        \end{semilogyaxis}
-    \end{tikzpicture}
-    \caption{Standard deviation of the total energy as a function of the time step.}\label{fig:energystddev}
-\end{figure}
+\subsection{}
+The system was first thermalised for \(\num{3000}\) time steps, which proved to be more than sufficient in the previous exercise. A cylinder was then created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
 
 
 
-%   ___
-%  / __|
-% | (__
-%  \___|
-%
-\openin\infile=c/data/firstsize.dat
-\read\infile to \firstsize
-\closein\infile
-\openin\infile=c/data/lastsize.dat
-\read\infile to \lastsize
-\closein\infile
-\openin\infile=c/data/Lpower.dat
-\read\infile to \Lpower
-\closein\infile
-\subsection*{c)}
-In order to find the time dependence of the temperature as well as the fluctuations, I have made a simple python script which goes through a set of system sizes and runs a LAMMPs script for each system size.
-Between the runs, the temperature is read from the log file and the standard deviation is calculated.
-
-The size starts at \(L_x=\num{\firstsize}a\), where \(a\) is the chosen initial unit cell size for argon.
-The largest size used is \(L_x=\num{\lastsize}a\).
-\(L_y\) and \(L_z\) are kept constant so that the total number of particles is proportional to \(L_x\).
-
-\Vref*{fig:temp} shows the temperature as a function of time for the smallest and largest system sizes.
-While the equilibrium temperature and equilibration time are the same, the fluctuations are much greater when the system is smaller.
-\Vref{fig:tempstddev} shows the standard deviation as a function of system size.
-Note the logarithmic scale on both axes.
-
-The linear trend of \(\ln(\sigma_T)\) as a function of \(\ln(L)\) indicates that the fluctuations are proportional to some power of the system size, as
-\[
-    \ln(\sigma_T) = C\ln(L) + D = \ln(L^C) + D \implies \sigma_T = \exp{\ln(L^C)+D}
-    = \exp{D}\exp{\ln(L^C)} = \exp{D}L^C \propto L^C\,.
-\]
-Numpy's polyfit function gives the result \(C=\num[round-mode=figures,round-precision=3]{\Lpower} \approx -1/2\). This can be rewritten as
-\[
-    \sigma_T \propto \frac{1}{L_x^{1/2}} \propto
-    \frac{1}{N^{1/2}} = \frac{1}{\sqrt{N}}\,,
-\]
-which is a known theoretical result.
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle, enlarge x limits=0.05,
-                     enlarge y limits=0.15,
-                     axis y discontinuity=crunch, width=6in,height=3in,
-                     xlabel={\(t\ \qty[\si{\pico\s}]\)}, ylabel={\(T\ \qty[\si{\kelvin}]\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=east},
-                     legend style={draw=none}, legend cell align=left,
-                     ]
-                     \addplot+[mark=none] table[x expr={\thisrowno{0}/1000}] {c/data/Tfirst.dat};
-                     \addlegendentry{\(L_x = \num{\firstsize}a\)};
-                     \addplot+[mark=none] table[x expr={\thisrowno{0}/1000}] {c/data/Tlast.dat};
-                     \addlegendentry{\(L_x = \num{\lastsize}a\)};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Temperature as a function of time for the largest and smallest system sizes used.
-    It is clear that the temperature fluctuations decrease with system size, while the equilibration time and equilibrium temperature do not depend on the number of atoms.}
-    \label{fig:temp}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{loglogaxis}[thick,
-            log ticks with fixed point,
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=3in,
-            xlabel={\(L_x/a\)}, ylabel={\(\sigma_T\ \qty[\si{\kelvin}]\)}]
-            \addplot+[mark=none,] table {c/data/stddev.dat};
-        \end{loglogaxis}
-    \end{tikzpicture}
-    \caption{Standard deviation of the temperature as a function of the system size.
-    Both axes are logarithmic, so the linear trend indicates that the fluctuations are proportional to some power of the system size.}\label{fig:tempstddev}
-\end{figure}
-
-
-%      _
-%   __| |
-%  / _` |
-% | (_| |
-%  \__,_|
-%
-\openin\infile=d/data/firstT.dat
-\read\infile to \firstT
-\closein\infile
-\openin\infile=d/data/lastT.dat
-\read\infile to \lastT
-\closein\infile
-\subsection*{d)}
-In order to find the temperature dependence of the pressure, I have made a simple python script which goes through a set of temperatures and runs a LAMMPs script for each temperature.
-Between the runs, the pressure is read from the log file, an equilibration time is found, and the mean pressure after the system has reached equilibrium is calculated.
-
-\Vref*{fig:presstime} shows the pressure as a function of time for the smallest and largest temperatures.
-\Vref{fig:presstemp} shows the pressure as a function of temperature. The result is very linear, as expected from the van der Waals equation of state,
-\[
-    \qty(P+a\qty(\frac{N}{V})^2)\qty(V-Nb) = Nk_\mathrm{B}T\,.
-\]
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle, enlarge x limits=0.05,
-                     enlarge y limits=0.24,
-                     axis y discontinuity=crunch, width=6in,height=3in,
-                     xlabel={\(t\ \qty[\si{\pico\s}]\)}, ylabel={\(P\ \qty[\si{\bar}]\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=east},
-                     legend style={draw=none,at={(0.9,0.5)}}, legend cell align=left,
-                     ]
-                     \addplot+[mark=none,blue] table[x expr={\thisrowno{0}/1000}, y expr={\thisrowno{1}*1.602e6}] {d/data/Pfirst.dat};
-                     \addlegendentry{\(T = \SI{\firstT}{\kelvin}\)};
-                     \addplot+[mark=none,red] table[x expr={\thisrowno{0}/1000}, y expr={\thisrowno{1}*1.602e6}] {d/data/Plast.dat};
-                     \addlegendentry{\(T = \SI{\lastT}{\kelvin}\)};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Pressure as a function of time for two different temperatures. The shapes of the graphs are approximately the same, but they stabilise at different values.}
-    \label{fig:presstime}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,
-            % axis lines=middle,
-            % axis x discontinuity=crunch,
-            % axis y discontinuity=crunch,
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=3in,
-            xlabel={\(T\ \qty[\si{\kelvin}]\)}, ylabel={\(P\ \qty[\si{bar}]\)}]
-            \addplot+[mark=none,] table[y expr={\thisrowno{1}*1.602e6}] {d/data/P.dat};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Pressure as a function of temperature. The result fits well with the expectation of a linear dependence.}\label{fig:presstemp}
-\end{figure}
 
 
 
-%   ___
-%  / _ \
-% |  __/
-%  \___|
-%
-\begin{pycode}[NrhoNT]
-import numpy as np
-P = np.loadtxt("e/data/simulatedPs.dat")
-Nrho, NT = P.shape
-\end{pycode}
-\openin\infile=e/data/a.dat
-\read\infile to \aparam
-\closein\infile
-\openin\infile=e/data/b.dat
-\read\infile to \bparam
-\closein\infile
-\subsection*{e)}
-Ideally, the equation of state for the system should be the van der Waals equation of state,
-\[
-    \qty(P+a\qty(\frac{N}{V})^2)\qty(V-Nb) = Nk_\mathrm{B}T\,,
-\]
-which is a modified version of the good ol' ideal gas law, \(PV=Nk_\mathrm{B}T\). The modifications are \(V\to V-Nb\), which represents the fact that the atoms take up some space, and \(P\to P+a\qty(N/V)^2\), which incorporates the added pressure due to collisions.
-Together, these changes make the equation suitable for describing a system where atoms collide elastically but otherwise do not interact.
-In this part of the project, the atoms are modelled as interacting through short-range conservative forces, which should give a behaviour reasonably closed to the target system of the van der Waals equation of state.
-
-By introducing the density, \(\rho=N/V\), and dividing by \(N\), the equation of state can be rewritten as
-\[
-    \qty(P+a\rho^2)(\rho^{-1}- b) = k_\mathrm{B}T
-    \implies P = \frac{k_\mathrm{B}T}{\rho^{-1}-b} - a\rho^2
-    = \frac{\rho k_\mathrm{B}T}{1-\rho b} - a\rho^2\,.
-\]
-The parameters \(a\) and \(b\) can be determined through running simulations for many pairs of \(\qty(\rho,T)\).
-A fitting function from scipy determines the coefficients which make the predicted equation of state fit as well as possible with the obtained data. The result is
-\[
-    a = \num[round-mode=figures]{\aparam}P_0\sigma^6\,,\qquad
-    b = \num[round-mode=figures]{\bparam}\sigma^3\,.
-\]
-Note that the results of the curve fitting algorithm must be taken with a grain of salt, as the initial guess appears to have a large effect. I have attempted to circumvent this problem by choosing many initial guesses at random and choosing the parameters which give the smallest error (in \(L_1\) norm).
-
-In~\vref{fig:vanderWaals} and~\vref{fig:vanderWaals2}, the computed pressure is plotted as a function of temperature and density, together with the van der Waals equation of state with the parameters given above.
-Note that the temperature axis shows the resulting equilibrium temperature, not the initial temperature used by LAMMPs. A grid of \(\py[NrhoNT]{Nrho}\times\py[NrhoNT]{NT}\) densities and temperatures was used.
-
-For small densities, the theoretical model seems to fit well.
-In this domain, the particles spend very little time interacting, corresponding to the elastic collision model behind the van der Waals equation of state. For large pressures and low temperatures, the effect of interactions increases, causing the simulation results to deviate more from the theoretical predictions.
-\Vref{fig:Perror} quantifies the relative error.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,view={30}{30},
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=5in,
-            ylabel={\(T/T_0\)}, xlabel={\(\rho\sigma^3\)},
-            zlabel={\(P/P_0\)}, legend cell align=left,
-            ]
-            \addplot3+[mesh,blue] table {e/data/simulated.dat};
-            \addlegendentry{Simulation results};
-            \addplot3+[mesh,red] table {e/data/fitted.dat};
-            \addlegendentry{Fitted data};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Pressure as a function of temperature and density.}\label{fig:vanderWaals}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \includegraphics{e/fig.pdf}
-    \caption{Pressure as a function of temperature and density. The red surface is the simulation result, while the blue surface is the fitted approximation.}\label{fig:vanderWaals2}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,view={0}{90}, colorbar,
-            colorbar style={ylabel={\(\abs{\Delta P}/P\)},ymode=log},
-            enlarge x limits=0.05, enlarge y limits=0.1,width=6in,height=4in,
-            ylabel={\(T/T_0\)}, xlabel={\(\rho\sigma^3\)},
-            ]
-            \addplot3+[surf] table {e/data/relative_error.dat};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Relative error, \(\abs{\Delta P}/P\).}\label{fig:Perror}
-\end{figure}
-
-\clearpage
-
-\subsection*{f)}
-The diffusion coefficient is determined by running a simulation for several temperatures, calculating the mean squared displacement and using the known linear time dependence for sufficiently long times,
-\[
-    \langle r^2(t)\rangle = 6Dt\,.
-\]
-The mean squared displacement is calculated by LAMMPs, while ``sufficiently long time'' is determined by looking at the error of a linear fit; the error is first calculated using all the obtained data for \(\langle r^2(t)\rangle\), then more and more of the first time values are ignored until the error has decreased significantly. A thermostat was used to have more control over the equilibrium temperature.
-\tikzexternaldisable
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-                     enlarge x limits=0.07,
-                     enlarge y limits=0.06,
-                     width=5in,height=3in,
-                     xlabel={\(t/t_0\)}, ylabel={\(\langle r^2(t)\rangle/\sigma^2\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=west},
-                     legend style={draw=none,at={(1.2,1)}}, legend cell align=left,
-                     ]
-                     \begin{pycode}[msdplot]
-import numpy as np
-Ts = np.loadtxt("f/data/Ts.dat")
-Ts = Ts[::-1]
-for i,T in enumerate(Ts[::len(Ts)//10]):
-    print(r"\addplot table {f/data/msd_%g.dat};" % T)
-    print(r"\addlegendentry{\(T/T_0 = %g\)};" % T)
-                 \end{pycode}
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Mean squared displacement as a function of time for a few different initial temperatures. A higher temperature means a higher average kinetic energy, resulting in more motion. For the smallest temperatures, the diffusivity is approximately zero, as the system is in a solid state.}%
-    \label{fig:msdtime}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,
-            % axis lines=middle,
-            % axis x discontinuity=crunch,
-            % axis y discontinuity=crunch,
-            enlarge x limits=0.05,
-            enlarge y limits=0.2,
-            width=6in,height=3in,
-            xlabel={\(T/T_0\)}, ylabel={\(Dt_0/\sigma^2\)}]
-            \addplot+[mark=none,] table {f/data/D.dat};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Diffusion coefficient as a function of equilibrium temperature. The diffusivity looks to be linearly increasing with temperature above a certain value.}\label{fig:argonD}
-\end{figure}
-
-\subsection*{g)}
-The radial distribution function is easily computed by ovito, using a CoordinateNumberModifier.
-\Vref{fig:rdf} and \vref{fig:rdfliquid} show the result for a few different temperatures, as well as for a perfect face-centred cubic (fcc) lattice.
-The latter is calculated from the initial configuration of atoms.
-In the fcc lattice, the radial distribution is discrete, as the separation between atoms is sharply defined.
-When the system is solid, the radial distribution function still has spikes, as all atoms should have approximately the same surroundings, but the spikes are smeared out due to vibrations.
-
-In the liquid phase, there is no long range symmetry, and hence the result is much less spiked.
-The increase in disorder due to a higher temperature is also clear from the figure.
-All phases show that no atoms can be closer to each other than a certain distance and that the concentration of atoms is largest just outside this distance.
-
-Note that a different density is used in this exercise than in all other exercises.
-This is done to force the perfect lattice to have the same spacing as an equilibrium system, which requires the smallest distance between atoms to be the equilibrium distance in the Lennard-Jones potential, \(d_{\min{}} = 2^{1/6}\sigma\).
-In a face-centred cubic lattice, the shortest distance is between atoms in the corners and atoms on the faces.
-This distance is \(d_{\min{}}=a/\sqrt{2}\), so the lattice parameter and unit cell volume must be
-\[
-    a = 2^{1/6}\sqrt{2}\sigma \implies V = a^3 = 4\sigma^3\,.
-\]
-As there are \(4\) atoms per unit cell, the density is \(1\) atom per \(\sigma^3\), giving a reduced density (the parameter of the \texttt{lattice} command) of \(1\).
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-                     enlarge x limits=0.07,
-                     enlarge y limits=0.06,
-                     width=5in,height=3in,
-                     xlabel={\(r/\sigma\)}, ylabel={\(g(r)\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=west},
-                     legend style={draw=none,at={(1.2,1)}}, legend cell align=left,
-                     ]
-                     \begin{pycode}[msdplot]
-import numpy as np
-Ts = np.loadtxt("g/data/Ts.dat")
-for i,T in enumerate(Ts[:1]):
-    print(r"\addplot table {g/data/rdf_%g.dat};" % T)
-    print(r"\addlegendentry{\(T/T_0 = %g\)};" % T)
-                 \end{pycode}
-            \addplot table {g/data/fccrdf.dat};
-            \addlegendentry{FCC};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Radial distribution function for the solid phase and a perfect face-centred cubic lattice. With the reduced density calculated above, the peaks in the solid structure overlap perfectly with the peaks in the perfect lattice. The difference is the widening due to vibrations.}%
-    \label{fig:rdf}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-                     enlarge x limits=0.07,
-                     enlarge y limits=0.06,
-                     width=5in,height=3in,
-                     xlabel={\(r/\sigma\)}, ylabel={\(g(r)\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=west},
-                     legend style={draw=none,at={(1.2,1)}}, legend cell align=left,
-                     ]
-                     \begin{pycode}[msdplot]
-import numpy as np
-Ts = np.loadtxt("g/data/Ts.dat")
-for i,T in enumerate(Ts[1:]):
-    print(r"\addplot table {g/data/rdf_%g.dat};" % T)
-    print(r"\addlegendentry{\(T/T_0 = %g\)};" % T)
-                 \end{pycode}
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Radial distribution function for a few different temperatures in the liquid phase.}%
-    \label{fig:rdfliquid}
-\end{figure}
-
-\subsection*{h)}
-According to the internet\cite{lemak_berendsen_1994}, the Berendsen thermostat does not completely simulate the canonical (NVT) ensemble, giving unphysical results for certain measurements. See also the next exercise.
-
-\subsection*{i)}
-The Berendsen thermostat, which models weak interactions with an external heat bath through a rescaling of the velocities, is implemented in LAMMPs through \texttt{fix temp/berendsen}.
-As seen from \vref{fig:thermostats}, this causes the temperature to approach the target temperature exponentially, with a curve similar to that of an overdamped or critically damped oscillation.
-
-In contrast, the Nosé-Hoover thermostat gives a more natural behaviour for the temperature curve, which looks like an underdamped oscillation.
-This thermostat is also known to replicate a canonical ensemble\cite{evans_nosehoover_1985}, and it is therefore the default thermostat used in LAMMPs by the \texttt{fix nvt} command.
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle, enlarge x limits=0.05,
-                     enlarge y limits=0.15,
-                     axis y discontinuity=crunch, width=6in,height=3in,
-                     xlabel={\(t/t_0\)}, ylabel={\(T/T_0\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=east},
-                     legend style={draw=none}, legend cell align=left,
-                     ]
-                     \addplot+[mark=none] table {i/data/T_berendsen.dat};
-                     \addlegendentry{Berendsen};
-                     \addplot+[mark=none] table {i/data/T_nosehoover.dat};
-                     \addlegendentry{Nosé-Hoover};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Temperature as a function of time for the Berendsen and Nosé-Hoover thermostats.
-    With the Berendsen thermostat, the temperature approaches the requested equilibrium temperature exponentially, in an overdamped fashion, while the temperature curve of the Nosé-Hoover thermostat looks underdamped.}%
-    \label{fig:thermostats}
-\end{figure}
-
-\subsection*{j)}
-The two-particle interaction in the Stillinger-Weber potential is
-\[
-    V(r_{ij}) = \begin{cases}A\varepsilon\qty(B\qty(\frac{\sigma}{r_{ij}})^p - \qty(\frac{\sigma}{r_{ij}})^q)\cdot\exp{\sigma/\qty(r_{ij}-a\sigma)}\,, & r < a\sigma\\ 0\,, & r\geq a\sigma \end{cases}
-\]
-while the Lennard-Jones potential is
-\[
-    V(r_{ij}) = \begin{cases}4\varepsilon \qty({\qty(\frac{\sigma}{r_{ij}})}^{12} - {\qty(\frac{\sigma}{r_{ij}})}^6)\,, & r < 3\sigma\\ 0\,, & r\geq3\sigma\end{cases}
-\]
-These look fairly similar, however the parameter \(q\) is zero\cite{stillinger_computer_1985} and \(p=4\). For small distances, where the potentials are repulsive, they behave similarly, as they blow up as \(1/r^4\) and \(1/r^{12}\). The attractive parts are more different, as the Stillinger-Weber term \(\oldexp(\sigma/\qty(r-a\sigma))\) decays much faster than Lennard-Jones's \(1/r^6\). Additionally, the Stillinger-Weber term is exactly zero at the cutoff, so the potential does not have to be shifted, as opposed to the Lennard-Jones term.
-
-In addition to the two-body term, the Stillinger-Weber potential has a three-body term, unlike the Lennard-Jones potential. This term increases the energy when angles deviate from the idealized tetrahedral angle.
-
-\subsection*{k)}
-Done.
-
-\subsection*{l)}
-The same machinery as for argon is used to measure the mean squared displacements shown in~\vref{fig:msdtimesi} and the diffusion coefficient shown in~\vref{fig:siD}. There is a clear phase transition around \(T=\SI{2400}{\kelvin}\), where the diffusivity is almost discontinuous. When the temperature is lower than this, the diffusivity is zero, as the silicon is solid, while the diffusivity increases linearly in the liquid phase.
-
-One unfortunate (but apparently normal\footnote{\url{http://lammps.sandia.gov/threads/msg60488.html}}) result is that the melting temperature is much higher than the experimental value.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-                     enlarge x limits=0.07,
-                     enlarge y limits=0.06,
-                     width=5in,height=3in,
-                     xlabel={\(t\ \qty[\si{\pico\s}]\)}, ylabel={\(\langle r^2(t)\rangle\ \qty[\si{\angstrom\squared}]\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=west},
-                     legend style={draw=none,at={(1.2,1)}}, legend cell align=left,
-                     ]
-                     \begin{pycode}[msdplotsi]
-import numpy as np
-Ts = np.loadtxt("l/data/Ts.dat")
-Ts = Ts[::-1]
-eqTs = np.loadtxt("l/data/eqTs.dat")[::-1]
-for i in range(0,len(Ts),max(1,len(Ts)//10)):
-    print(r"\addplot table {l/data/msd_%g.dat};" % Ts[i])
-    print(r"\addlegendentry{\(T = \SI{%d}{\kelvin}\)};" % eqTs[i])
-                 \end{pycode}
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Mean squared displacement in silicon as a function of time for a few different equilibrium temperatures. A higher temperature means a higher average kinetic energy, resulting in more motion. For the smallest temperatures, the diffusivity is approximately zero, as the system is in a solid state.}%
-    \label{fig:msdtimesi}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,
-            % axis lines=middle,
-            % axis x discontinuity=crunch,
-            % axis y discontinuity=crunch,
-            enlarge x limits=0.05,
-            enlarge y limits=0.2,
-            width=6in,height=3in,
-            xlabel={\(T\ \qty[\si{\kelvin}]\)}, ylabel={\(D\ \qty[\si{\angstrom\squared\per\pico\second}]\)}]
-            \addplot+[mark=none,] table {l/data/D.dat};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Diffusion coefficient of silicon as a function of equilibrium temperature. The diffusivity is practically zero when silicon is in a solid state but increases almost discontinuously when the melting temperature is reached. In liquid silicon, diffusivity increases linearly with temperature.}\label{fig:siD}
-\end{figure}
 
 
-\subsection*{m)}
-The provided moltemplate code was used with the argon machinery to calculate the mean squared displacements in~\vref{fig:msdtimeh2o}, the diffusion coefficients in~\vref{fig:h2oD} and the radial distribution functions in~\vref{fig:rdfh2o}.
 
-Unlike in the silicon simulations, no clear phase transition is seen in the diffusion coefficient.
-This is due to the long nucleation time of water\cite{matsumoto_molecular_2002,angelil_homogeneous_2015}, which means that the atoms will not have time to move into a stable ice structure during the simulation.
-As such, the diffusivity is not exactly zero for temperatures which should give a solid phase.
 
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-                     enlarge x limits=0.07,
-                     enlarge y limits=0.06,
-                     width=5in,height=3in,
-                     xlabel={\(t\ \qty[\si{\femto\s}]\)}, ylabel={\(\langle r^2(t)\rangle\ \qty[\si{\angstrom\squared}]\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=west},
-                     legend style={draw=none,at={(1.2,1)}}, legend cell align=left,
-                     ]
-                     \begin{pycode}[msdploth2o]
-import numpy as np
-Ts = np.loadtxt("m/data/Ts.dat")
-Ts = Ts[::-1]
-eqTs = np.loadtxt("m/data/eqTs.dat")[::-1]
-for i in range(0,len(Ts),max(1,len(Ts)//10)):
-    print(r"\addplot table {m/data/msd_%g.dat};" % Ts[i])
-    print(r"\addlegendentry{\(T = \SI{%d}{\kelvin}\)};" % eqTs[i])
-                 \end{pycode}
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Mean squared displacement for water as a function of time for a few different equilibrium temperatures. A higher temperature means a higher average kinetic energy, resulting in more motion. For the smallest temperatures, the system should be in a solid state, resulting in zero diffusivity. Due to the slow nucleation rate of water, this is not the case.}%
-    \label{fig:msdtimeh2o}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,
-            % axis lines=middle,
-            % axis x discontinuity=crunch,
-            % axis y discontinuity=crunch,
-            enlarge x limits=0.05,
-            enlarge y limits=0.2,
-            width=6in,height=3in,
-            xlabel={\(T\ \qty[\si{\kelvin}]\)}, ylabel={\(D\ \qty[\si{\angstrom\squared\per\femto\second}]\)}]
-            \addplot+[mark=none,] table {m/data/D.dat};
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Diffusion coefficient for water as a function of equilibrium temperature. The diffusivity looks to be approximately linearly increasing when the temperature is above \(\SI{300}{\kelvin}\).}\label{fig:h2oD}
-\end{figure}
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}
-        \begin{axis}[thick,axis lines=middle,
-                     enlarge x limits=0.07,
-                     enlarge y limits=0.06,
-                     width=5in,height=3in,
-                     xlabel={\(r\ \qty[\si{\angstrom}]\)}, ylabel={\(g(r)\)},
-                     xlabel style={anchor=north west}, ylabel style={anchor=west},
-                     legend style={draw=none,at={(1.2,1)}}, legend cell align=left,
-                     ]
-                     \begin{pycode}[h2ordf]
-import numpy as np
-Ts = np.loadtxt("m/data/Ts.dat")
-eqTs = np.loadtxt("m/data/eqTs.dat")
-indices = np.loadtxt("m/data/rdfindices.dat",dtype=int)
-for i in indices:
-    print(r"\addplot table {m/data/rdf_%g.dat};" % Ts[i])
-    print(r"\addlegendentry{\(T = \SI{%d}{\kelvin}\)};" % eqTs[i])
-                 \end{pycode}
-        \end{axis}
-    \end{tikzpicture}
-    \caption{Radial oxygen-oxygen distribution in water function for a few different temperatures. When the temperature is increased, the peaks are smeared out due to vibrations.}%
-    \label{fig:rdfh2o}
-\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

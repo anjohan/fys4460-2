@@ -1,6 +1,6 @@
 output_ttree
 *.data
-*.pdf
+report.pdf
 data/
 *.restart
 *.bin
