@@ -1,3 +1,15 @@
+output_ttree
+*.data
+*.pdf
+data/
+*.restart
+*.bin
+log.*
+*.swp
+__pycache__/
+pythontex-files-report/
+
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
