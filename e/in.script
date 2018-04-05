@@ -31,17 +31,21 @@ dump 1 all custom 10 data/dump.lammpstrj id type x y z vx vy vz
 thermo_style custom step time temp ke pe etotal cpuremain spcpu
 thermo 100
 
-#/snippetstart/#
 fix 1 all nve
-run 300 # thermalise
+run 3000 # thermalise
 
 python make_spheres input 1 SELF format p file make_spheres.py
 python make_spheres invoke
-
 group moving subtract all matrix
+
+#/snippetstart/#
+variable is_moving atom gmask("moving")
+python delete_half_of_moving input 1 SELF format p file delete_half_of_moving.py
+python delete_half_of_moving invoke
+#/snippetend/#
+
 velocity matrix set 0 0 0
 unfix 1
 
 fix 1 moving nve
-run 300
-#/snippetend/#
+run 3000

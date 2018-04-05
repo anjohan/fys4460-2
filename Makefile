@@ -1,7 +1,7 @@
 all:
 	$(MAKE) report.pdf
 
-report.pdf: report.tex sources.bib c/in.script c/make_spheres.py
+report.pdf: report.tex sources.bib cd/in.script cd/make_spheres.py
 	mkdir -p data
 	latexmk -pdflua -shell-escape report
 
