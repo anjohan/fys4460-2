@@ -5,8 +5,13 @@ def delete_half_of_moving(lmpptr):
         import numpy as np
 
         lmp = lammps(ptr=lmpptr)
-        ids = lmp.extract_atom("id", 1)
-        is_moving = lmp.extract_variable("is_moving", "all", 1)
+        N = lmp.get_natoms()
+
+        def tointarray(x):
+            return np.ctypeslib.as_array(x, shape=(N, ))
+
+        ids = tointarray(lmp.extract_atom("id", 1))
+        is_moving = tointarray(lmp.extract_variable("is_moving", "all", 1))
 
         moving_ids = ids[is_moving == 1]
         delete_ids = moving_ids[::2]
@@ -19,3 +24,5 @@ def delete_half_of_moving(lmpptr):
 
     except Exception:
         traceback.print_exc()
+        import sys
+        sys.exit(1)

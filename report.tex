@@ -162,7 +162,7 @@ I reused the argon script from project 1, but changed the size of the system and
 \]
 
 \subsection{}
-The system was first thermalised for \(\num{3000}\) time steps, which proved to be more than sufficient in the previous exercise. A cylinder was then created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
+The system was first thermalised for a certain number of timesteps, determined by looking a the visualisations in the previous exercise. A cylinder was then created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
 
 \subsection{}
 I considered many options for making spheres with random positions and radii, and ended up using the \texttt{python} command in LAMMPs. This runs a Python function during the execution of the LAMMPs script. The funcion receives a pointer to a LAMMPs object, which it uses to extract variables and run commands.
@@ -171,10 +171,33 @@ The important part of the LAMMPs script is
 \lstinputlisting[linerange={snippetstart-snippetend}]{cd/in.script}
 The first \texttt{python} command defines the function \texttt{make\_spheres}, found in the \texttt{file make\_spheres.py}. This function takes \texttt{1} argument, \texttt{SELF}, which is a pointer (\texttt{p}) to the current LAMMPs object. The second \texttt{python} command runs the Python function. The \texttt{matrix} group is defined by the Python function as the atoms inside the spheres. The content of \texttt{make\_spheres.py} is the simple function
 \lstinputlisting[language=Python]{cd/make_spheres.py}
-Visualisation of the result was done by colour coding the atoms according to the magnitude of their velocities, where the lower bound is zero and the upper bound is a very small number.
+Periodic boundary conditions are fully enforced by creating all relevant periodic images of each sphere. Unfortunately, the approach of using the \texttt{python} command inside LAMMPs to run LAMMPS commands does not work well with MPI, so the simulation is run serially.
+
+Visualisation of the result was done by colour coding the atoms according to the magnitude of their velocities, where the lower bound is zero and the upper bound is a very small number. See \vref{fig:spheres}.
+\begin{figure}[tbh]
+    \centering
+    \includegraphics[width=0.5\textwidth]{cd/spheres.png}
+    \caption{Visualisation of the randomly placed spheres.}%
+    \label{fig:spheres}
+\end{figure}
 
 \subsection{}
+See the above exercise.
 
+\subsection{}
+Armed with the \texttt{python} command discovered in the previous exercise, I used the LAMMPs commands
+\lstinputlisting[linerange={snippetstart-snippetend}]{e/in.script}
+The variable \texttt{is\_moving} is set to \(1\) for all atoms in the group \texttt{moving} and \(0\) for all atoms in the matrix. The Python function is
+\lstinputlisting[language=Python]{e/delete_half_of_moving.py}
+Halfway through writing this, I discovered that LAMMPs actually has built-in commands for deleting a certain fraction of the particles in a region, but at that point, there was no turning back. One difficulty of extracting values from \texttt{lammps} objects is the type of the values returned, which for arrays is a pointer to the underlying C++ structures. This must be converted using \texttt{numpy.ctypeslib.as\_array}.
+\begin{pycode}
+with open("e/data/beforedeletion.dat","r") as infile1, open("e/data/afterdeletion.dat","r") as infile2:
+    before = infile1.read()
+    after = infile2.read()
+res = r"\(\num{%s}\) and \(\num{%s}\)" % (before, after)
+\end{pycode}
+
+The files written by the \texttt{print} commands in the LAMMPs snippet above contain \py{res}, showing that the number of atoms not in the matrix is indeed halved when the Python function is executed.
 
 
 

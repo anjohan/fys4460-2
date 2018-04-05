@@ -10,7 +10,7 @@ variable b_in_sigma equal ${b}/${sigma}
 variable density equal 4/(${b_in_sigma}^3)
 variable L equal 20
 
-variable T equal 1.05
+variable T equal 1.5
 
 lattice fcc ${density}
 region simbox block 0 ${L} 0 ${L} 0 ${L}
@@ -32,20 +32,33 @@ thermo_style custom step time temp ke pe etotal cpuremain spcpu
 thermo 100
 
 fix 1 all nve
-run 3000 # thermalise
+run 1000 # thermalise
 
 python make_spheres input 1 SELF format p file make_spheres.py
 python make_spheres invoke
 group moving subtract all matrix
 
 #/snippetstart/#
-variable is_moving atom gmask("moving")
+variable num_moving equal count(moving)
+print ${num_moving} file data/beforedeletion.dat
+
+variable is_moving atom gmask(moving)
+
 python delete_half_of_moving input 1 SELF format p file delete_half_of_moving.py
 python delete_half_of_moving invoke
+
+print ${num_moving} file data/afterdeletion.dat
 #/snippetend/#
 
 velocity matrix set 0 0 0
 unfix 1
 
 fix 1 moving nve
+reset_timestep 0
+variable mytime equal dt*step
+compute mytemp moving temp
+thermo 10
+thermo_style custom step v_mytime c_mytemp ke pe etotal cpuremain spcpu
+log data/log.simulation
+
 run 3000
