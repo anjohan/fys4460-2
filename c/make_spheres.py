@@ -19,7 +19,6 @@ def make_spheres(lmpptr):
         zs = np.random.uniform(0, lz, size=num_spheres)
         rs = np.random.uniform(rmin, rmax, size=num_spheres)
 
-        counter = 0
         for sphere in range(num_spheres):
             for i in [-1, 0, 1]:
                 for j in [-1, 0, 1]:
@@ -28,11 +27,11 @@ def make_spheres(lmpptr):
                         y = ys[sphere] + j * ly
                         z = zs[sphere] + k * lz
                         r = rs[sphere]
-                        cmd = "region s%d sphere %g %g %g %g units box" % (
-                            counter, x, y, z, r)
-                        lmp.command(cmd)
-                        cmd = "group matrix region s%d" % counter
-                        lmp.command(cmd)
-                        counter += 1
+                        cmds = [
+                            "region mysphere sphere %g %g %g %g units box" %
+                            (x, y, z, r), "group matrix region mysphere",
+                            "region mysphere delete"
+                        ]
+                        lmp.commands_list(cmds)
     except Exception:
         traceback.print_exc()

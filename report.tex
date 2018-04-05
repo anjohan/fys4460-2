@@ -70,7 +70,7 @@
 \definecolor{greencomments}{rgb}{0,0.5,0}
 \definecolor{redstrings}{rgb}{0.9,0,0}
 \lstset{rangeprefix=\#/,
-    rangesuffix=/,
+    rangesuffix=/\#,
     includerangemarker=false}
 \renewcommand{\lstlistingname}{Kodesnutt}
 \lstset{showstringspaces=false,
@@ -164,8 +164,13 @@ I reused the argon script from project 1, but changed the size of the system and
 \subsection{}
 The system was first thermalised for \(\num{3000}\) time steps, which proved to be more than sufficient in the previous exercise. A cylinder was then created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
 
+\subsection{}
+I considered many options for making spheres with random positions and radii, and ended up using the \texttt{python} command in LAMMPs. This runs a Python function during the execution of the LAMMPs script. The funcion receives a pointer to a LAMMPs object, which it uses to extract variables and run commands.
 
-
+The important part of the LAMMPs script is
+\lstinputlisting[linerange={snippetstart-snippetend}]{c/in.script}
+The first \texttt{python} command defines the function \texttt{make\_spheres}, found in the \texttt{file make\_spheres.py}. This function takes \texttt{1} argument, \texttt{SELF}, which is a pointer (\texttt{p}) to the current LAMMPs object. The second \texttt{python} command runs the Python function. The \texttt{matrix} group is defined by the Python function as the atoms inside the spheres. The content of \texttt{make\_spheres.py} is the simple function
+\lstinputlisting[language=Python]{c/make_spheres.py}
 
 
 
