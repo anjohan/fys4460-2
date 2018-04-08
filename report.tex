@@ -184,7 +184,7 @@ Visualisation of the result was done by colour coding the atoms according to the
 \subsection{}
 See the above exercise.
 
-\subsection{}
+\subsection{}\label{subsec:e}
 Armed with the \texttt{python} command discovered in the previous exercise, I used the LAMMPs commands
 \lstinputlisting[linerange={snippetstart-snippetend}]{e/in.script}
 The variable \texttt{is\_moving} is set to \(1\) for all atoms in the group \texttt{moving} and \(0\) for all atoms in the matrix. The Python function is
@@ -304,6 +304,7 @@ Comparing this to the result from the lectures shows that \(\Delta P/L = \nabla 
 
 The viscosity can now be determined numerically by running simulations and comparing the resulting velocity profile (at equilibrium) to~\vref{eq:velprofile}.
 
+I here choose to study the fluid flow of argon with half the density, using the method developed in~\vref{subsec:e} to delete half of the moving atoms. The setup is otherwise as in the first exercises with a cylindrical pore.
 
 
 
