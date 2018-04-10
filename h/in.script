@@ -67,4 +67,4 @@ dump flowdump moving custom 10 data/dump.flow id type x y z vx vy vz
 fix externalforce moving addforce 0.1 0 0
 fix 1 moving nve
 
-run 800000
+run 40000

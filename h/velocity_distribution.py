@@ -49,4 +49,13 @@ with open("data/dump.flow", "r") as infile:
 equilibrium_vxs = np.asarray(vx_dists)
 mean_result = np.nanmean(equilibrium_vxs, axis=0)
 
+n = 4 / b**3
+Fx = 0.1
+mu = 1 / np.polyfit(n * Fx / 4 * (a**2 - bin_mids**2), mean_result, deg=1)[0]
+
+approximation = n * Fx / (4 * mu) * (a**2 - bin_mids**2)
+
 np.savetxt("data/v.dat", np.asarray([bin_mids, mean_result]).transpose())
+np.savetxt("data/vapprox.dat",
+           np.asarray([bin_mids, approximation]).transpose())
+np.savetxt("data/viscosity.dat", [mu])

@@ -307,6 +307,18 @@ The viscosity can now be determined numerically by running simulations and compa
 I here choose to study the fluid flow of argon with half the density, using the method developed in~\vref{subsec:e} to delete half of the moving atoms. The setup is otherwise as in the first exercises with a cylindrical pore.
 
 The velocity of the centre of mass of a group can be calculated by LAMMPs. This is equal to the mean velocity of the atoms in the group. \Vref{fig:cylindervxcm} show the time evolution., while \Vref{fig:cylindervx} shows the radial distribution after the system has reached equilibrium.
+
+\begin{pycode}
+with open("h/data/viscosity.dat","r") as infile:
+    mu = float(infile.read())
+mutxt = r"\num{%.2g}" % mu
+\end{pycode}
+
+From~\vref{eq:velprofile}, the radial distribution should be a linear function of \(nF_x\qty(a^2-r^2)/4\) with slope \(1/\mu\). I use this relation to approximate the viscosity, resulting in
+\[
+    \mu \approx \py{mutxt}\ \sigma/\varepsilon\tau
+\]
+\Vref{fig:cylindervx} shows the quality of the approximation.
 \begin{figure}[tbh]
     \centering
     \begin{tikzpicture}
@@ -330,8 +342,12 @@ The velocity of the centre of mass of a group can be calculated by LAMMPs. This 
     \centering
     \begin{tikzpicture}
         \begin{axis}[
+            legend style={draw=none},
+            legend cell align=left,
             thick,
             axis lines=middle,
+            xlabel style={anchor=north west},
+            ylabel style={anchor=east},
             %axis y discontinuity=crunch,
             enlarge x limits=0.05,
             enlarge y limits=0.1,
@@ -340,6 +356,9 @@ The velocity of the centre of mass of a group can be calculated by LAMMPs. This 
             ylabel={\(\bar{v}_x\tau/\sigma\)}
             ]
                 \addplot+[mark=none] table {h/data/v.dat};
+                \addlegendentry{Simulation result};
+                \addplot+[mark=none] table {h/data/vapprox.dat};
+                \addlegendentry{Approximation};
         \end{axis}
     \end{tikzpicture}
     \caption{Radial distribution of the mean velocity in the \(x\)-direction of atoms in the cylinder in equilibrium. The result is an average over all dumped timesteps after the one determined by looking at ~\vref{fig:cylindervxcm}.}%
