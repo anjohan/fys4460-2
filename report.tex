@@ -157,9 +157,9 @@
 %
 \subsection{}
 I reused the argon script from project 1 but changed the size of the system and the parameter of the lattice command. According to the project description, the lattice spacing should be \(a=\SI{5.72}{\angstrom} = \py{round(5.72/3.405,2)}\sigma\), giving a reduced density (the parameter of the \texttt{lattice} command) of
-\[
+\begin{equation}
     \rho^* = \rho\sigma^3 = \frac{4}{\qty(a/\sigma)^3} = \frac{4}{\py{round(5.72/3.405,2)}^3} = \py{round(4/(5.72/3.405)**3,2)}.
-\]
+\end{equation}
 
 \subsection{}
 The system was first thermalised for a certain number of timesteps, determined by looking a the visualisations in the previous exercise. A cylinder was then created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
@@ -243,70 +243,79 @@ The mean squared displacement of the atoms in the pores was calculated using the
 
 \subsection{}
 Darcy's law is
-\[
+\begin{equation}
     U = \frac{k}{\mu}\qty(\nabla P - \rho g),
-\]
+\end{equation}
 where \(U\) is the volume flux density, \(k\) is the permeability, \(\nabla P\) is the gradient of the external pressure (non-existent in this project), \(\rho\) is the mass density and \(g\) is the net acceleration due to externally applied forces. The applied force points in the \(x\)-direction, and \(F_x\) is the force applied to each atom. Newton's second law for a system of \(N\) atoms in a volume \(V\) with the force \(F_x\) applied to each is thus
-\[
+\begin{equation}
     NF_x = Nmg.
-\]
+\end{equation}
 This can be divided by the volume, giving
-\[
+\begin{equation}
     \frac{Nm}{V}g = \rho g = \frac{N}{V}F_x = nF_x,
-\]
+\end{equation}
 where \(n\) is the number density.
 
 \subsection{}
 (I choose to redo the analytical solution for the velocity field with an applied force instead of an applied pressure gradient for my own reference and understanding.)
 
 I here assume that we are dealing with a Newtonian fluid, defined as a fluid in which the viscous forces due to a difference in the \(\hat{e}_i\) component of the velocity creates a force on a surface with normal \(\hat{e}_j\) that is proportional to the derivative of the velocity when going in the \(\hat{e}_j\) direction,
-\[
-    \sigma_{ij}\ \qty(\equiv \frac{F_i}{A_j}) = \mu \pdv{v_i}{x_j}.\eqtag{eq:newtfluid}
-\]
+\begin{equation}
+    \sigma_{ij}\ \qty(\equiv \frac{F_i}{A_j}) = \mu \pdv{v_i}{x_j}.\label{eq:newtfluid}
+\end{equation}
 The quantity \(\mu\) is the viscosity, while \(\sigma_{ij}\) is the stress tensor. In a cylindrical pore orientated in the \(x\) direction with radius \(a\), the velocity field should be independent of the angle with the \(x\) axis and only depend on the distance to the centre of the cylinder.
 
 A small volume element in cylindrical coordinates has volume \(r\dd{\phi}\dd{r}\dd{x}\). It is acted upon by two forces in the \(x\) direction:
 \begin{itemize}
     \item The externally applied force. With the number density \(n\), the number of particles in the volume element is \(nr\dd{\phi}\dd{r}\dd{x}\), giving a total force
-        \[
+        \begin{equation}
             F_{\text{ext}} = nF_xr\dd{\phi}\dd{r}\dd{x}.
-        \]
+        \end{equation}
     \item
         Viscous forces due to the radial dependence of the velocity. According to~\vref{eq:newtfluid}, the force on the ``outer'' surface of the volume element, whose normal is directed radially outwards, is
-        \[
+        \begin{equation}
             F_{\text{outer}} = \mu \eval{\pdv{v_x}{r}}_{r=r+\dd{r}}\overbrace{\qty(r+\dd{r})\dd{\phi}\dd{x}}^{A_r},
-        \]
+        \end{equation}
         while the force on the ``inner'' surface, whose normal is directed radially inwards, is
-        \[
+        \begin{equation}
             F_{\text{inner}} = -\mu \eval{\pdv{v_x}{r}}_{r=r}r\dd{\phi}\dd{x}.
-        \]
+        \end{equation}
         The minus sign is due to the normal of the surface being \(-\hat{e}_r\). Without the minus, it would be the force from ``our'' volume element, \(r\in\qty[r,r+\dd{r}]\), on the volume element with \(r\in\qty[r-\dd{r},r]\). Newton's third law says that the required correction is a minus sign. Due to the assumption of rotational invariance there are no other viscous forces.
 \end{itemize}
 In equilibrium, the sum of these forces must be zero from Newton's first law. This gives
-\[
+\begin{equation}
     \mu\qty(\eval{\pdv{v_x}{r}}_{r+\dd{r}}\qty(r+\dd{r})-\eval{\pdv{v_x}{r}}_{r}r)\dd{\phi}\dd{x} + nF_xr\dd{\phi}\dd{r}\dd{x} = 0.
-\]
+\end{equation}
 I now divide by \(\dd{\phi}\dd{r}\dd{x}\), recognize the resulting first term as the derivative of \(r\pdv*{v_x}{r}\) and move some terms, resulting in the differential equation
-\[
+\begin{equation}
     \pdv{r}(r\pdv{v_x}{r}) = -\frac{nF_x}{\mu}r.
-\]
+\end{equation}
 Everything except \(r\) is constant on the right-hand side, so this equation can be integrated directly to yield the \(x\) component of the velocity as a function of \(r\),
-\[
+\begin{equation}
     r\pdv{v_x}{r} = -\frac{1}{2}\frac{nF_x}{\mu}r^2 + C
     \implies \pdv{v_x}{r} = -\frac{nF_x}{2\mu}r + C/r
     \implies v_x(r) = -\frac{nF_x}{4\mu}r^2 + C\ln r + D.
-\]
+\end{equation}
 The velocity should not be unproblematic when \(r=0\), i.e.\ in the centre of the cylinder, so \(C\) must be zero. The second integration constant, \(D\), is determined by the choice of boundary conditions. A reasonable assumption for a solid-liquid interface is zero velocity at the boundary, which in this case is \(r=a\). This implies \(D=nF_xa^2/4\mu\), giving the velocity profile
-\[
-    v_x(r) = \frac{nF_x}{4\mu}\qty(a^2-r^2).\eqtag{eq:velprofile}
-\]
+\begin{equation}
+    v_x(r) = \frac{nF_x}{4\mu}\qty(a^2-r^2).\label{eq:velprofile}
+\end{equation}
 Comparing this to the result from the lectures shows that \(\Delta P/L = \nabla P\) is replaced by \(-nF_x\) when a force is applied instead of a pressure gradient.
+
+Darcy's law contains the volume flux density, i.e.\ the amount of volume passing through a cross-section per time per area, \(U=\dd{V}/A\dd{t}\). The infinitesimal volume must be \(\dd{V}=A\dd{x}=A\bar{v}_x\dd{t}\), where \(A\) is the area of the cross-section and \(\bar{v}_x\) is the average velocity in the \(x\)-direction. Consequently \(U=\bar{v}_x\). The mean velocity can be calculated as
+\begin{alignat}{2}
+    U &= \bar{v}_x = \frac{1}{A}\int v_x \dd{A} = \frac{1}{\pi a^2}\int_0^a v(r)\cdot 2\pi r\dd{r}\\
+    &= \frac{nF_x}{2\mu a^2}\int_0^a \qty(a^2-r^2)r\dd{r}
+    = \frac{nF_x}{2\mu a^2}\qty(\tfrac{1}{2}a^4-\tfrac{1}{4}a^4)
+    = \frac{nF_xa^2}{8\mu} = \frac{k}{\mu} nF_x,
+\end{alignat}
+which is just Darcy's law for an externally applied force, where \(k=a^2/8\).
 
 The viscosity can now be determined numerically by running simulations and comparing the resulting velocity profile (at equilibrium) to~\vref{eq:velprofile}.
 
 I here choose to study the fluid flow of argon with half the density, using the method developed in~\vref{subsec:e} to delete half of the moving atoms. The setup is otherwise as in the first exercises with a cylindrical pore.
 
-The velocity of the centre of mass of a group can be calculated by LAMMPs. This is equal to the mean velocity of the atoms in the group. \Vref{fig:cylindervxcm} show the time evolution., while \Vref{fig:cylindervx} shows the radial distribution after the system has reached equilibrium.
+The velocity of the centre of mass of a group can be calculated by LAMMPs. This is equal to the mean velocity of the atoms in the group. \Vref{fig:cylindervxcm} shows the time evolution, while \vref{fig:cylindervx} shows the radial distribution after the system has reached equilibrium.
 
 \begin{pycode}
 with open("h/data/viscosity.dat","r") as infile:
@@ -315,10 +324,10 @@ mutxt = r"\num{%.2g}" % mu
 \end{pycode}
 
 From~\vref{eq:velprofile}, the radial distribution should be a linear function of \(nF_x\qty(a^2-r^2)/4\) with slope \(1/\mu\). I use this relation to approximate the viscosity, resulting in
-\[
-    \mu \approx \py{mutxt}\ \sigma/\varepsilon\tau
-\]
-\Vref{fig:cylindervx} shows the quality of the approximation.
+\begin{equation}
+    \mu \approx \py{mutxt}\ \sigma/\varepsilon\tau.
+\end{equation}
+\Vref*{fig:cylindervx} shows the quality of the approximation. The number density is approximated by \(2/b^3\), as there are initially \(4\) atoms per face-centred cubic unit cell with volume \(b^3\).
 \begin{figure}[tbh]
     \centering
     \begin{tikzpicture}
@@ -364,7 +373,12 @@ From~\vref{eq:velprofile}, the radial distribution should be a linear function o
     \caption{Radial distribution of the mean velocity in the \(x\)-direction of atoms in the cylinder in equilibrium. The result is an average over all dumped timesteps after the one determined by looking at ~\vref{fig:cylindervxcm}.}%
     \label{fig:cylindervx}
 \end{figure}
-
+A few comments on the implementation:
+\begin{itemize}
+    \item The radial distribution is made by finding all the \(x\)-components of the velocities of the atoms, binning them by the atom's distance to the centre of the cylinder, and taking the average velocity in each bin. Additionally, the result is averaged over time for all saved data sets with the system in equilibrium.
+    \item Initially the radial bins had linearly spaced radii. This causes the number of atoms per bin to increase linearly with the bin number, which means that very few atoms are in the inner bins. As a result, the statistics were not very good. The solution was to distribute the radial bin edges as the square root of linearly spaced values from \(0\) to \(a^2\), resulting in an approximately uniform distribution of particles.
+    \item The radial bin averaging was done by \texttt{scipy.stats.binned\_statistics}. Unfortunately, Scipy is not easily available inside the Ovitos interpreter, so the dump files had to be read manually. Fortunately, the LAMMPs dump format is very suitable for programmed reading.
+\end{itemize}
 
 
 

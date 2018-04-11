@@ -6,9 +6,9 @@ a = 20 / sigma
 b = 5.72 / sigma
 L = 20 * b
 
-num_bins = 20
-bin_edges = np.linspace(0, a, num_bins + 1)
-bin_mids = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+num_bins = 50
+bin_edges = np.sqrt(np.linspace(0, a**2, num_bins + 1))
+bin_mids = np.sqrt(0.5 * (bin_edges[1:]**2 + bin_edges[:-1]**2))
 
 vx_dists = []
 timesteps = []
@@ -49,13 +49,14 @@ with open("data/dump.flow", "r") as infile:
 equilibrium_vxs = np.asarray(vx_dists)
 mean_result = np.nanmean(equilibrium_vxs, axis=0)
 
-n = 4 / b**3
+n = 2 / b**3
 Fx = 0.1
-mu = 1 / np.polyfit(n * Fx / 4 * (a**2 - bin_mids**2), mean_result, deg=1)[0]
+mu = 1 / np.polyfit(
+    n * Fx / 4 * (a**2 - bin_edges[:-1]**2), mean_result, deg=1)[0]
 
-approximation = n * Fx / (4 * mu) * (a**2 - bin_mids**2)
+approximation = n * Fx / (4 * mu) * (a**2 - bin_edges**2)
 
-np.savetxt("data/v.dat", np.asarray([bin_mids, mean_result]).transpose())
+np.savetxt("data/v.dat", np.asarray([bin_edges[:-1], mean_result]).transpose())
 np.savetxt("data/vapprox.dat",
-           np.asarray([bin_mids, approximation]).transpose())
+           np.asarray([bin_edges, approximation]).transpose())
 np.savetxt("data/viscosity.dat", [mu])
