@@ -259,7 +259,7 @@ where \(n\) is the number density.
 \subsection{}
 (I choose to redo the analytical solution for the velocity field with an applied force instead of an applied pressure gradient for my own reference and understanding.)
 
-I here assume that we are dealing with a Newtonian fluid, defined as a fluid in which the viscous forces due to a difference in the \(\hat{e}_i\) component of the velocity creates a force on a surface with normal \(\hat{e}_j\) that is proportional to the derivative of the velocity when going in the \(\hat{e}_j\) direction,
+I here assume that we are dealing with a Newtonian fluid, defined as a fluid in which the viscous forces due to a difference in the \(\hat{e}_i\) component of the velocity creates a force in the \(\hat{e}_i\) direction on a surface with normal \(\hat{e}_j\) that is proportional to the derivative of the velocity when going in the \(\hat{e}_j\) direction,
 \begin{equation}
     \sigma_{ij}\ \qty(\equiv \frac{F_i}{A_j}) = \mu \pdv{v_i}{x_j}.\label{eq:newtfluid}
 \end{equation}
@@ -307,15 +307,15 @@ Darcy's law contains the volume flux density, i.e.\ the amount of volume passing
     U &= \bar{v}_x = \frac{1}{A}\int v_x \dd{A} = \frac{1}{\pi a^2}\int_0^a v(r)\cdot 2\pi r\dd{r}\\
     &= \frac{nF_x}{2\mu a^2}\int_0^a \qty(a^2-r^2)r\dd{r}
     = \frac{nF_x}{2\mu a^2}\qty(\tfrac{1}{2}a^4-\tfrac{1}{4}a^4)
-    = \frac{nF_xa^2}{8\mu} = \frac{k}{\mu} nF_x,
+    = \frac{nF_xa^2}{8\mu} = \frac{k}{\mu} nF_x,\label{eq:meanvel}
 \end{alignat}
 which is just Darcy's law for an externally applied force, where \(k=a^2/8\).
 
-The viscosity can now be determined numerically by running simulations and comparing the resulting velocity profile (at equilibrium) to~\vref{eq:velprofile}.
+The viscosity can now be determined numerically by running simulations and comparing the resulting velocity profile (at equilibrium) to~\vref{eq:velprofile}, while the permeability for an arbitrary geometry can be calculated from~\vref{eq:meanvel} with the viscosity found from a cylindrical pore.
 
 I here choose to study the fluid flow of argon with half the density, using the method developed in~\vref{subsec:e} to delete half of the moving atoms. The setup is otherwise as in the first exercises with a cylindrical pore.
 
-The velocity of the centre of mass of a group can be calculated by LAMMPs. This is equal to the mean velocity of the atoms in the group. \Vref{fig:cylindervxcm} shows the time evolution, while \vref{fig:cylindervx} shows the radial distribution after the system has reached equilibrium.
+The velocity of the centre of mass of a group can be calculated by LAMMPs. This is equal to the mean velocity of the atoms in the group. \Vref{fig:cylindervxcm} shows the time evolution, while~\vref{fig:cylindervx} shows the radial distribution after the system has reached equilibrium.
 
 \begin{pycode}
 with open("h/data/viscosity.dat","r") as infile:
@@ -325,15 +325,16 @@ mutxt = r"\num{%.2g}" % mu
 
 From~\vref{eq:velprofile}, the radial distribution should be a linear function of \(nF_x\qty(a^2-r^2)/4\) with slope \(1/\mu\). I use this relation to approximate the viscosity, resulting in
 \begin{equation}
-    \mu \approx \py{mutxt}\ \sigma/\varepsilon\tau.
+    \mu \approx \py{mutxt}\ \varepsilon\tau/\sigma^3. \label{eq:viscosity}
 \end{equation}
-\Vref*{fig:cylindervx} shows the quality of the approximation. The number density is approximated by \(2/b^3\), as there are initially \(4\) atoms per face-centred cubic unit cell with volume \(b^3\).
+According to the internet, this is only \(\SI{50}{\percent}\) too large.
+\Vref{fig:cylindervx} shows the quality of the approximation. The number density is approximated by \(2/b^3\), as there are initially \(4\) atoms per face-centred cubic unit cell with volume \(b^3\).
 \begin{figure}[tbh]
     \centering
     \begin{tikzpicture}
         \begin{axis}[
             thick,
-            axis lines=middle,
+            %axis lines=middle,
             %axis y discontinuity=crunch,
             enlarge x limits=0.05,
             enlarge y limits=0.1,
@@ -380,8 +381,44 @@ A few comments on the implementation:
     \item The radial bin averaging was done by \texttt{scipy.stats.binned\_statistics}. Unfortunately, Scipy is not easily available inside the Ovitos interpreter, so the dump files had to be read manually. Fortunately, the LAMMPs dump format is very suitable for programmed reading.
 \end{itemize}
 
+\subsection{}
+The permeability as a function of porosity can be found by using~\vref{eq:meanvel} with the viscosity from~\vref{eq:viscosity} for set of porosities. I here choose to vary the porosity simply by varying the number of spheres in the matrix.
 
+A rough theoretical model for the permeability is\cite{feder_flow_1984}
+\begin{equation}
+    k = \frac{a^2}{45}\frac{\phi^3}{\qty(1-\phi)^2},\label{eq:modelpermeability}
+\end{equation}
+which is compared with the simulation results in~\vref{fig:permeability}. The fit is not very good, apart from a similar trend.
 
+Since each simulation takes a non-trivial amount of time to run, I avoid redoing simulations with the following \texttt{make} rule.
+\lstinputlisting[linerange={snippetstart-snippetend}]{{i/Makefile}}
+A \texttt{Pool} object from \texttt{multiprocessing} is used to call a Python analysis function for each number of spheres in parallel. This function issues a \texttt{make} command, reads the resulting log file and calculates the permeability from~\vref{eq:meanvel}. The result is shown in~\vref{fig:permeability}.
+\begin{figure}[tbh]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            legend style={draw=none,at={(0.4,0.8)}},
+            legend cell align=left,
+            thick,
+            %axis lines=middle,
+            xlabel style={anchor=north west},
+            ylabel style={anchor=east},
+            %axis y discontinuity=crunch,
+            enlarge x limits=0.05,
+            enlarge y limits=0.1,
+            width=6in, height=3in,
+            xlabel={\(\phi\)},
+            ylabel={\(k/\sigma^2\)}
+            ]
+                \addplot+[mark=none] table {i/data/permeability.dat};
+                \addlegendentry{Simulation result};
+                \addplot+[mark=none] table {i/data/model.dat};
+                \addlegendentry{Theoretical model};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Permeability as a function of porosity in a system with spheres making up the matrix. Comparison with the theoretical model in~\vref{eq:modelpermeability} shows that the fit is not particularly good, but at least the trend is similar.}%
+    \label{fig:permeability}
+\end{figure}
 
 
 
