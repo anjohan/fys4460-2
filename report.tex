@@ -18,15 +18,16 @@
 \usepackage{amsmath}
 \usepackage{amssymb,epstopdf}
 %\usepackage{fouriernc}
-% \usepackage[T1]{fontenc}
-% \usepackage{mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
 % \usepackage{inconsolata}
 %\usepackage{eulervm}
 %\usepackage{cmbright}
-\usepackage{fontspec}
-\usepackage{unicode-math}
-\setmainfont{Tex Gyre Pagella}
-\setmathfont{Tex Gyre Pagella Math}
+%\usepackage{fontspec}
+%\usepackage{unicode-math}
+%\setmainfont{Tex Gyre Pagella}
+%\setmathfont{Tex Gyre Pagella Math}
+\usepackage[scaled]{beramono}
 \usepackage{fancyhdr}
 \usepackage[utf8]{inputenc}
 \usepackage{textcomp}
@@ -74,7 +75,7 @@
     includerangemarker=false}
 \renewcommand{\lstlistingname}{Kodesnutt}
 \lstset{showstringspaces=false,
-    basicstyle=\footnotesize\ttfamily,
+    basicstyle=\ttfamily,
     keywordstyle=\color{bluekeywords},
     commentstyle=\color{greencomments},
     numberstyle=\color{bluekeywords},
@@ -156,40 +157,48 @@
 %  \__,_|
 %
 \subsection{}
-I reused the argon script from project 1 but changed the size of the system and the parameter of the lattice command. According to the project description, the lattice spacing should be \(a=\SI{5.72}{\angstrom} = \py{round(5.72/3.405,2)}\sigma\), giving a reduced density (the parameter of the \texttt{lattice} command) of
+I reused the argon script from project 1 but changed the size of the system and the parameter of the lattice command. According to the project description, the lattice spacing should be \(a=\SI{5.72}{\angstrom} = \py{round(5.72/3.405,2)}\sigma\), giving a reduced density (the parameter of the \lstinline{lattice} command) of
 \begin{equation}
     \rho^* = \rho\sigma^3 = \frac{4}{\qty(a/\sigma)^3} = \frac{4}{\py{round(5.72/3.405,2)}^3} = \py{round(4/(5.72/3.405)**3,2)}.
 \end{equation}
 
 \subsection{}
-The system was first thermalised for a certain number of timesteps, determined by looking a the visualisations in the previous exercise. A cylinder was then created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
+The system was first thermalised for a certain number of timesteps, determined by looking at the visualisations in the previous exercise. A cylinder was created with the given dimensions, and the atoms inside were selected as a group. The remaining atoms were then given zero velocity for visualisation purposes and excluded from the integration. Visual inspection in Ovito shows that this approach works.
 
 \subsection{}
-I considered many options for making spheres with random positions and radii and ended up using the \texttt{python} command in LAMMPs. This runs a Python function during the execution of the LAMMPs script. The function receives a pointer to a LAMMPs object, which it uses to extract variables and run commands.
+I considered many options for making spheres with random positions and radii and ended up using the \lstinline{python} command in LAMMPs. This runs a Python function during the execution of the LAMMPs script. The function receives a pointer to a LAMMPs object, which it uses to extract variables and run commands.
 
 The important part of the LAMMPs script is
 \lstinputlisting[linerange={snippetstart-snippetend}]{cd/in.script}
-The first \texttt{python} command defines the function \texttt{make\_spheres}, found in the \texttt{file make\_spheres.py}. This function takes \texttt{1} argument, \texttt{SELF}, which is a pointer (\texttt{p}) to the current LAMMPs object. The second \texttt{python} command runs the Python function. The \texttt{matrix} group is defined by the Python function as the atoms inside the spheres. The content of \texttt{make\_spheres.py} is the simple function
+The first \lstinline{python} command defines the function \lstinline{make_spheres}, found in the \lstinline{file make_spheres.py}. This function takes \lstinline{1} argument, \lstinline{SELF}, which is a pointer (\lstinline{p}) to the current LAMMPs object. The second \lstinline{python} command runs the Python function. The \lstinline{matrix} group is defined by the Python function as the atoms inside the spheres. The content of \lstinline{make_spheres.py} is the simple function
 \lstinputlisting[language=Python]{cd/make_spheres.py}
-Periodic boundary conditions are fully enforced by creating all relevant periodic images of each sphere. Unfortunately, the approach of using the \texttt{python} command inside LAMMPs to run LAMMPS commands does not work well with MPI, so the simulation is run serially.
+Periodic boundary conditions are fully enforced by creating all relevant periodic images of each sphere. Unfortunately, the approach of using the \lstinline{python} command inside LAMMPs to run LAMMPS commands does not work well with MPI, so the simulation is run serially.
 
-Visualisation of the result was done by colour coding the atoms according to the magnitude of their velocities, where the lower bound is zero and the upper bound is a very small number. See \vref{fig:spheres}.
-\begin{figure}[tbh]
+Visualisation of the result was done by colour coding the atoms according to the magnitude of their velocities, where the lower bound is zero and the upper bound is a very small number. See~\vref{fig:spheres}.
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{cd/spheres.png}
     \caption{Visualisation of the randomly placed spheres.}%
     \label{fig:spheres}
 \end{figure}
 
+The porosity can be calculated by assuming that the density is the same everywhere. With this assumption, the porosity, which is equal to the volume fraction available for flow, is then equal to the fraction of atoms not inside the rigid matrix. This gives a higher porosity than if the spherical pores were non-overlapping.
+
+\openin\infile=cd/data/porosity.dat
+\read\infile to\myporosity
+\closein\infile
+In LAMMPs, this method of calculating is implemented through a command like \lstinline{variable porosity equal count(moving)/count(all)}, giving the result \(\phi=\num[round-mode=places,round-precision=2]{\myporosity}\).
+
+
 \subsection{}
 See the above exercise.
 
 \subsection{}\label{subsec:e}
-Armed with the \texttt{python} command discovered in the previous exercise, I used the LAMMPs commands
+Armed with the \lstinline{python} command discovered in the previous exercise, I used the LAMMPs commands
 \lstinputlisting[linerange={snippetstart-snippetend}]{e/in.script}
-The variable \texttt{is\_moving} is set to \(1\) for all atoms in the group \texttt{moving} and \(0\) for all atoms in the matrix. The Python function is
+The variable \lstinline{is_moving} is set to \(1\) for all atoms in the group \lstinline{moving} and \(0\) for all atoms in the matrix. The Python function is
 \lstinputlisting[language=Python]{e/delete_half_of_moving.py}
-Halfway through writing this, I discovered that LAMMPs actually has built-in commands for deleting a certain fraction of the particles in a region, but at that point, there was no turning back. One difficulty of extracting values from \texttt{lammps} objects is the type of the values returned, which for arrays is a pointer to the underlying C++ structures. This must be converted using \texttt{numpy.ctypeslib.as\_array}.
+Halfway through writing this, I discovered that LAMMPs actually has built-in commands for deleting a certain fraction of the particles in a region, but at that point, there was no turning back. One difficulty of extracting values from \lstinline{lammps} objects is the type of the values returned, which for arrays is a pointer to the underlying C++ structures. This must be converted using \lstinline{numpy.ctypeslib.as_array}.
 \begin{pycode}
 with open("e/data/beforedeletion.dat","r") as infile1, open("e/data/afterdeletion.dat","r") as infile2:
     before = infile1.read()
@@ -197,9 +206,9 @@ with open("e/data/beforedeletion.dat","r") as infile1, open("e/data/afterdeletio
 res = r"\(\num{%s}\) and \(\num{%s}\)" % (before, after)
 \end{pycode}
 
-The files written by the \texttt{print} commands in the LAMMPs snippet above contain \py{res}, showing that the number of atoms not in the matrix is indeed halved when the Python function is executed. \Vref{fig:temppores} shows the time evolution of the temperature in the pores.
+The files written by the \lstinline{print} commands in the LAMMPs snippet above contain \py{res}, showing that the number of atoms not in the matrix is indeed halved when the Python function is executed. \Vref{fig:temppores} shows the time evolution of the temperature in the pores.
 
-\begin{figure}[tbh]
+\begin{figure}[H]
     \centering
     \begin{tikzpicture}
         \begin{axis}[
@@ -220,8 +229,8 @@ The files written by the \texttt{print} commands in the LAMMPs snippet above con
 \end{figure}
 
 \subsection{}
-The mean squared displacement of the atoms in the pores was calculated using the \texttt{compute msd} command in LAMMPs.
-\begin{figure}[tbh]
+The mean squared displacement of the atoms in the pores was calculated using the \lstinline{compute msd} command in LAMMPs. \Vref{fig:msdpores} shows the result. When \(t\) is large, the mean squared displacement grows linearly with time, while the parabolic trend in the ballistic regime is visible when \(t\ll \tau\).
+\begin{figure}[H]
     \centering
     \begin{tikzpicture}
         \begin{axis}[
@@ -237,7 +246,7 @@ The mean squared displacement of the atoms in the pores was calculated using the
                 \addplot+[mark=none] table {e/data/msd.dat};
         \end{axis}
     \end{tikzpicture}
-    \caption{Mean squared displacement in the pores of the material as a function of time. As expected, the result is linear.}%
+    \caption{Mean squared displacement in the pores of the material as a function of time. As expected, the result is linear when \(t\) is large and approximately parabolic when \(t\) is small.}%
     \label{fig:msdpores}
 \end{figure}
 
@@ -259,13 +268,13 @@ where \(n\) is the number density.
 \subsection{}
 (I choose to redo the analytical solution for the velocity field with an applied force instead of an applied pressure gradient for my own reference and understanding.)
 
-I here assume that we are dealing with a Newtonian fluid, defined as a fluid in which the viscous forces due to a difference in the \(\hat{e}_i\) component of the velocity creates a force in the \(\hat{e}_i\) direction on a surface with normal \(\hat{e}_j\) that is proportional to the derivative of the velocity when going in the \(\hat{e}_j\) direction,
+I here assume that we are dealing with a Newtonian fluid, defined as a fluid in which the viscous forces due to a difference in the \(\hat{e}_i\) component of the velocity create a force in the \(\hat{e}_i\)-direction on a surface with normal \(\hat{e}_j\) that is proportional to the derivative of the velocity when going in the \(\hat{e}_j\)-direction,
 \begin{equation}
     \sigma_{ij}\ \qty(\equiv \frac{F_i}{A_j}) = \mu \pdv{v_i}{x_j}.\label{eq:newtfluid}
 \end{equation}
-The quantity \(\mu\) is the viscosity, while \(\sigma_{ij}\) is the stress tensor. In a cylindrical pore orientated in the \(x\) direction with radius \(a\), the velocity field should be independent of the angle with the \(x\) axis and only depend on the distance to the centre of the cylinder.
+The quantity \(\mu\) is the viscosity, while \(\sigma_{ij}\) is the stress tensor. In a cylindrical pore orientated in the \(x\)-direction with radius \(a\), the velocity field should be independent of the angle with the \(x\)-axis and only depend on the distance to the centre of the cylinder.
 
-A small volume element in cylindrical coordinates has volume \(r\dd{\phi}\dd{r}\dd{x}\). It is acted upon by two forces in the \(x\) direction:
+A small volume element in cylindrical coordinates has volume \(r\dd{\phi}\dd{r}\dd{x}\). It is acted upon by two forces in the \(x\)-direction:
 \begin{itemize}
     \item The externally applied force. With the number density \(n\), the number of particles in the volume element is \(nr\dd{\phi}\dd{r}\dd{x}\), giving a total force
         \begin{equation}
@@ -296,13 +305,17 @@ Everything except \(r\) is constant on the right-hand side, so this equation can
     \implies \pdv{v_x}{r} = -\frac{nF_x}{2\mu}r + C/r
     \implies v_x(r) = -\frac{nF_x}{4\mu}r^2 + C\ln r + D.
 \end{equation}
-The velocity should not be unproblematic when \(r=0\), i.e.\ in the centre of the cylinder, so \(C\) must be zero. The second integration constant, \(D\), is determined by the choice of boundary conditions. A reasonable assumption for a solid-liquid interface is zero velocity at the boundary, which in this case is \(r=a\). This implies \(D=nF_xa^2/4\mu\), giving the velocity profile
+The velocity should not be problematic when \(r=0\), i.e.\ in the centre of the cylinder, so \(C\) must be zero. The second integration constant, \(D\), is determined by the choice of boundary conditions. A reasonable assumption for a solid-liquid interface is zero velocity at the boundary, which in this case is \(r=a\). This implies \(D=nF_xa^2/4\mu\), giving the velocity profile
 \begin{equation}
     v_x(r) = \frac{nF_x}{4\mu}\qty(a^2-r^2).\label{eq:velprofile}
 \end{equation}
 Comparing this to the result from the lectures shows that \(\Delta P/L = \nabla P\) is replaced by \(-nF_x\) when a force is applied instead of a pressure gradient.
 
-Darcy's law contains the volume flux density, i.e.\ the amount of volume passing through a cross-section per time per area, \(U=\dd{V}/A\dd{t}\). The infinitesimal volume must be \(\dd{V}=A\dd{x}=A\bar{v}_x\dd{t}\), where \(A\) is the area of the cross-section and \(\bar{v}_x\) is the average velocity in the \(x\)-direction. Consequently \(U=\bar{v}_x\). The mean velocity can be calculated as
+Darcy's law contains the volume flux density, i.e.\ the amount of volume passing through a cross-section per time per area, \(U=\dd{V}/A\dd{t}\). The infinitesimal volume must be
+\begin{equation}
+\dd{V}=A\dd{x}=A\bar{v}_x\dd{t},
+\end{equation}
+where \(A\) is the area of the cross-section and \(\bar{v}_x\) is the average velocity in the \(x\)-direction. Consequently \(U=\bar{v}_x\). The mean velocity can be calculated as
 \begin{alignat}{2}
     U &= \bar{v}_x = \frac{1}{A}\int v_x \dd{A} = \frac{1}{\pi a^2}\int_0^a v(r)\cdot 2\pi r\dd{r}\\
     &= \frac{nF_x}{2\mu a^2}\int_0^a \qty(a^2-r^2)r\dd{r}
@@ -329,7 +342,7 @@ From~\vref{eq:velprofile}, the radial distribution should be a linear function o
 \end{equation}
 According to the internet, this is only \(\SI{50}{\percent}\) too large.
 \Vref{fig:cylindervx} shows the quality of the approximation. The number density is approximated by \(2/b^3\), as there are initially \(4\) atoms per face-centred cubic unit cell with volume \(b^3\).
-\begin{figure}[tbh]
+\begin{figure}[H]
     \centering
     \begin{tikzpicture}
         \begin{axis}[
@@ -348,7 +361,7 @@ According to the internet, this is only \(\SI{50}{\percent}\) too large.
     \caption{Mean velocity in the \(x\)-direction of atoms in the cylinder as a function of time. The system appears to reach equilibrium after approximately \(100\tau\), or \(\num{20000}\) timesteps.}%
     \label{fig:cylindervxcm}
 \end{figure}
-\begin{figure}[tbh]
+\begin{figure}[H]
     \centering
     \begin{tikzpicture}
         \begin{axis}[
@@ -377,12 +390,12 @@ According to the internet, this is only \(\SI{50}{\percent}\) too large.
 A few comments on the implementation:
 \begin{itemize}
     \item The radial distribution is made by finding all the \(x\)-components of the velocities of the atoms, binning them by the atom's distance to the centre of the cylinder, and taking the average velocity in each bin. Additionally, the result is averaged over time for all saved data sets with the system in equilibrium.
-    \item Initially the radial bins had linearly spaced radii. This causes the number of atoms per bin to increase linearly with the bin number, which means that very few atoms are in the inner bins. As a result, the statistics were not very good. The solution was to distribute the radial bin edges as the square root of linearly spaced values from \(0\) to \(a^2\), resulting in an approximately uniform distribution of particles.
-    \item The radial bin averaging was done by \texttt{scipy.stats.binned\_statistics}. Unfortunately, Scipy is not easily available inside the Ovitos interpreter, so the dump files had to be read manually. Fortunately, the LAMMPs dump format is very suitable for programmed reading.
+    \item Initially the radial bins had linearly spaced radii. This causes the number of atoms per bin to increase linearly with the bin number, which means that very few atoms are in the inner bins. As a result, the statistics were not very good. My solution was to distribute the radial bin edges as the square root of linearly spaced values from \(0\) to \(a^2\), resulting in an approximately uniform distribution of particles.
+    \item The radial bin averaging was done by \lstinline{scipy.stats.binned_statistics}. Unfortunately, Scipy is not easily available inside the Ovitos interpreter, so the dump files had to be read manually. Fortunately, the LAMMPs dump format is very suitable for programmed reading.
 \end{itemize}
 
 \subsection{}
-The permeability as a function of porosity can be found by using~\vref{eq:meanvel} with the viscosity from~\vref{eq:viscosity} for set of porosities. I here choose to vary the porosity simply by varying the number of spheres in the matrix.
+The permeability as a function of porosity can be found by using~\vref{eq:meanvel} with the viscosity from~\vref{eq:viscosity} for a set of porosities. I here choose to vary the porosity simply by varying the number of spheres in the matrix.
 
 A rough theoretical model for the permeability is\cite{feder_flow_1984}
 \begin{equation}
@@ -390,10 +403,12 @@ A rough theoretical model for the permeability is\cite{feder_flow_1984}
 \end{equation}
 which is compared with the simulation results in~\vref{fig:permeability}. The fit is not very good, apart from a similar trend.
 
-Since each simulation takes a non-trivial amount of time to run, I avoid redoing simulations with the following \texttt{make} rule.
+Since each simulation takes a non-trivial amount of time to run, I avoid redoing simulations with the following \lstinline{make} rule.
 \lstinputlisting[linerange={snippetstart-snippetend}]{{i/Makefile}}
-A \texttt{Pool} object from \texttt{multiprocessing} is used to call a Python analysis function for each number of spheres in parallel. This function issues a \texttt{make} command, reads the resulting log file and calculates the permeability from~\vref{eq:meanvel}. The result is shown in~\vref{fig:permeability}.
-\begin{figure}[tbh]
+A \lstinline{Pool} object from \lstinline{multiprocessing} is used to call a Python analysis function for each number of spheres in parallel. This function issues a \lstinline{make} command, reads the resulting log file and calculates the permeability from~\vref{eq:meanvel}. The result is shown in~\vref{fig:permeability}.
+
+One way to improve the fit between the simulation results and the theoretical model might be upscaling the entire system, as the theoretical model holds for the continuum behaviour of fluids. This requires that all distances between rigid spheres must be larger than a certain length, probably on the order of \(\SI{1}{\nano\m}\). A total system size of approximately \(\SI{10}{\nano\m}\) is most likely too small to achieve continuum behaviour.
+\begin{figure}[H]
     \centering
     \begin{tikzpicture}
         \begin{axis}[
@@ -408,7 +423,8 @@ A \texttt{Pool} object from \texttt{multiprocessing} is used to call a Python an
             enlarge y limits=0.1,
             width=6in, height=3in,
             xlabel={\(\phi\)},
-            ylabel={\(k/\sigma^2\)}
+            ylabel={\(k/\sigma^2\)},
+            xtick distance=0.05,
             ]
                 \addplot+[mark=none] table {i/data/permeability.dat};
                 \addlegendentry{Simulation result};
@@ -416,7 +432,7 @@ A \texttt{Pool} object from \texttt{multiprocessing} is used to call a Python an
                 \addlegendentry{Theoretical model};
         \end{axis}
     \end{tikzpicture}
-    \caption{Permeability as a function of porosity in a system with spheres making up the matrix. Comparison with the theoretical model in~\vref{eq:modelpermeability} shows that the fit is not particularly good, but at least the trend is similar.}%
+    \caption{Permeability as a function of porosity in a system with spheres making up the matrix. Comparison with the theoretical model in~\vref{eq:modelpermeability} shows that the fit is not particularly good, but at least the trend is somewhat similar.}%
     \label{fig:permeability}
 \end{figure}
 

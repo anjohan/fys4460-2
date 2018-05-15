@@ -1,4 +1,5 @@
 all:
+	$(MAKE) -C cd all
 	$(MAKE) -C h all
 	$(MAKE) -C i data/permeability.dat
 	$(MAKE) report.pdf
